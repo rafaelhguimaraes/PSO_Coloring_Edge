@@ -2,20 +2,32 @@ import networkx as nx
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from particle import *
 
-class Particle:
-    def __init__(self, num_edges, num_colors):
-        self.position = [random.uniform(1, num_colors) for _ in range(num_edges)]
-        self.velocity = [random.uniform(-1, 1) for _ in range(num_edges)]
-        self.best_position = self.position[:]
-        self.best_fitness = float('inf')
+def num_conflicts(graph:nx.Graph(), num_colors, num_edges, colors):
+    violations = 0
+    edges = list(graph.edges())
+    edges_colors = []
 
-def fitness(graph, positions, num_colors):
+    for i in range(num_edges):
+        edges_colors.append([edges[i][0], edges[i][1], colors[i]])
+
+    num_vertices = graph.number_of_nodes() 
+    for v in range(1, num_vertices+1):
+        b = [0] * (num_colors + 2)
+        for x in edges_colors:
+            if x[0] == v or x[1] == v:
+                if b[x[2]] == 0:
+                    b[x[2]] = 1
+                else:
+                    violations += 1
+    return violations
+
+def fitness(graph, positions, num_colors, num_edges):
     colors = [int(round(pos)) for pos in positions]
-    conflicts = 0
-    for u, v in graph.edges():
-        if colors[u] == colors[v]:
-            conflicts += 1
+
+    conflicts = num_conflicts(graph, num_colors, num_edges, colors)
+    
     penalty = conflicts ** 2  # Aumenta a penalidade quadraticamente com o número de conflitos
     return conflicts + penalty
 
@@ -31,14 +43,14 @@ def update_position(particle, num_colors):
         new_position = particle.position[i] + particle.velocity[i]
         particle.position[i] = max(1, min(num_colors, new_position))
 
-def PSO(graph, num_colors, num_particles, max_iter):
+def PSO(graph, num_colors, num_edges, num_particles, max_iter):
     particles = [Particle(graph.number_of_edges(), num_colors) for _ in range(num_particles)]
     global_best_position = None
     global_best_fitness = float('inf')
 
     for iter in range(max_iter):
         for particle in particles:
-            fitness_value = fitness(graph, particle.position, num_colors)
+            fitness_value = fitness(graph, particle.position, num_colors, num_edges)
             if fitness_value < particle.best_fitness:
                 particle.best_fitness = fitness_value
                 particle.best_position = particle.position[:]
@@ -53,28 +65,3 @@ def PSO(graph, num_colors, num_particles, max_iter):
             update_position(particle, num_colors)
 
     return global_best_position 
-
-def plot_colored_graph(graph, coloring):
-    pos = nx.spring_layout(graph)  # posicao dos nos
-    colors = [int(round(pos)) for pos in coloring]
-    nx.draw(graph, pos, with_labels=True, node_color='skyblue', edge_color=colors, width=2, 
-        edge_cmap=plt.cm.viridis, vmin=0, vmax=max(coloring))
-    plt.show()
-
-# Exemplo de utilização
-if __name__ == "__main__":
-    # Criando um grafo de exemplo
-    G = nx.Graph()
-    G.add_edges_from([(1, 2), (1, 3), (2, 3), (2, 4), (3, 4)])
-
-    # Definindo parâmetros
-    num_colors = 3
-    num_particles = 10
-    max_iter = 100
-
-    # Executando PSO
-    best_coloring = PSO(G, num_colors, num_particles, max_iter)
-    print("Melhor coloração encontrada:", best_coloring)
-
-    # Mostrando o grafo colorido
-    plot_colored_graph(G, best_coloring)
