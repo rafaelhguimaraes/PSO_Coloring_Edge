@@ -17,17 +17,26 @@ def save_colored_graph(graph, coloring, filename):
     plt.savefig(filename)
 
 if __name__ == "__main__":
-    grafo = "Testes/myciel3.col"
+    grafo = "Testes/myciel4.col"
     G = read_graph_from_col_file(grafo)
+    num_colors = max(dict(G.degree()).values())
 
-    # Definindo parâmetros
-    num_colors = 3
     num_particles = 100
-    max_iter = 1000
+    max_iter = 500
+    #cs = [1, 2, 3]
+    cs = [0, 0.25, 0.5, 0.75, 1]
+    ws = [0.1,0.2, 0.3, 0.4, 0.5, 0.6]
 
-
-    # Executando PSO
-    best_coloring = PSO(G, num_colors, G.number_of_edges(), num_particles, max_iter)
-    print("Melhor coloração encontrada:", best_coloring)
-
-    save_colored_graph(G, best_coloring,"graph.png")
+    for c1 in cs:
+        for c2 in cs:
+            for w in ws:
+                if not (c1 == 0 and c2 == 0):
+                    best_coloring, best_fitness = PSO(G, num_colors, G.number_of_edges(), num_particles, max_iter, w, c1, c2)
+                    print("##########################################################################")
+                    print(f"Parâmetros: c1 = {c1}, c2 = {c2}, w = {w}")
+                    #print("Melhor coloração encontrada:", best_coloring)
+                    print(f"Best fitness: {best_fitness}")
+                    
+                    print([int(round(pos)) for pos in best_coloring])
+                    print("##########################################################################")
+                    #save_colored_graph(G, best_coloring,"graph.png")
